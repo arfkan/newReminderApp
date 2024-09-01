@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "newReminderApp",
+    "displayName": "New Reminder App",
     "slug": "newReminderApp",
     "version": "1.0.0",
     "orientation": "portrait",
