@@ -7,7 +7,7 @@ export const inputBoxStyles = StyleSheet.create({
         borderWidth: 1,
         marginBottom: 15,  
         paddingHorizontal: 15,
-        borderRadius: 8,  
+        borderRadius: 20,  
         fontSize: 16,  
         color: '#333', 
         backgroundColor: '#fff',  

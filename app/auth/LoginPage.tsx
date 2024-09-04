@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/redux/store';
+import { loginUser } from '@/redux/authSlice';  
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IUserLogin } from '@/types';
 import { inputBoxStyles } from '@/styles/common/inputBox';
 import { ButonStyles } from '@/styles/common/button';
 
-
 type AuthStackParamList = {
   Login: undefined;
   Signup: undefined;
-  MainPage: undefined; 
+  MainPage: undefined;
 };
 
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
@@ -22,26 +25,43 @@ const LoginPage = () => {
   });
 
   const navigation = useNavigation<LoginScreenNavigationProp>();
+  const dispatch = useDispatch<AppDispatch>();
+
+  const { token, error } = useSelector((state: RootState) => state.auth); // Redux state
+
+  useEffect(() => {
+    if (token) {
+      console.log('Token mevcut, MainPage\'e yönlendiriliyor...'); 
+      navigation.navigate('MainPage');
+    }
+  }, [token]);
+  
 
   const handleChange = (name: keyof IUserLogin, value: string) => {
-    setUserProps(prevState => ({
+    setUserProps((prevState) => ({
       ...prevState,
       [name]: value,
     }));
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const { email, password } = userProps;
 
     if (!email || !password) {
       Alert.alert('Hata', 'Lütfen e-posta ve şifrenizi girin.');
-      return; // Eksik bilgi varsa yönlendirme yapılmaz
+      return;
     }
 
-    // Giriş işlemleri burada yapılabilir
+    // Redux action çağırarak giriş yap
+    const resultAction = await dispatch(loginUser({ email, password }));
 
-    // Bilgiler tam ise MainPage sayfasına yönlendirme yap
-    navigation.navigate('MainPage');
+    if (loginUser.fulfilled.match(resultAction)) {
+      const token = resultAction.payload.token; // Redux'tan token al
+      await AsyncStorage.setItem('token', token); // Token'ı AsyncStorage'a kaydet
+      navigation.navigate('MainPage');
+    } else {
+      Alert.alert('Giriş Başarısız', error || 'Bir hata oluştu.');
+    }
   };
 
   return (
@@ -64,8 +84,7 @@ const LoginPage = () => {
       <TouchableOpacity style={ButonStyles.button} onPress={handleLogin}>
         <Text style={ButonStyles.buttonText}>Giriş Yap</Text>
       </TouchableOpacity>
-      
-      {/* Sign up link */}
+  
       <View style={styles.signupContainer}>
         <Text style={styles.signupText}>Don't have an account?</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Signup')}>

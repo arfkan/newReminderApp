@@ -1,7 +1,10 @@
-// SignupPage.tsx
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/redux/store';
+import { registerUser } from '@/redux/authSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SignupPageNavigationProp } from '../../navigation/types';
 import { IUserRegister } from '@/types';
 import { isPasswordValid } from '../../utils/validation';
@@ -10,7 +13,7 @@ import { ButonStyles } from '@/styles/common/button';
 
 const SignupPage = () => {
   const [userProps, setUserProps] = useState<IUserRegister>({
-    firstname: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -18,9 +21,10 @@ const SignupPage = () => {
 
   const [passwordError, setPasswordError] = useState<string>('');
   const navigation = useNavigation<SignupPageNavigationProp>();
+  const dispatch = useDispatch<AppDispatch>();
 
   const handleChange = (name: keyof IUserRegister, value: string) => {
-    setUserProps(prevState => ({
+    setUserProps((prevState) => ({
       ...prevState,
       [name]: value,
     }));
@@ -34,7 +38,7 @@ const SignupPage = () => {
     }
   };
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (!isPasswordValid(userProps.password)) {
       alert('Parola en az bir büyük harf, bir sayı ve bir özel karakter içermelidir.');
       return;
@@ -45,8 +49,16 @@ const SignupPage = () => {
       return;
     }
 
-    console.log('Kayıt bilgileri:', userProps);
+    // Redux action çağırarak kayıt yap
+    const resultAction = await dispatch(registerUser(userProps));
 
+    if (registerUser.fulfilled.match(resultAction)) {
+      const token = resultAction.payload.token; // Redux'tan token al
+      await AsyncStorage.setItem('token', token); // Token'ı AsyncStorage'a kaydet
+      navigation.navigate('MainPage');
+    } else {
+      Alert.alert('Kayıt Başarısız', 'Bir hata oluştu.');
+    }
   };
 
   return (
@@ -54,8 +66,8 @@ const SignupPage = () => {
       <TextInput
         style={inputBoxStyles.inputBox}
         placeholder="UserName"
-        value={userProps.firstname}
-        onChangeText={(value) => handleChange('firstname', value)}
+        value={userProps.username}
+        onChangeText={(value) => handleChange('username', value)}
       />
 
       <TextInput
@@ -104,7 +116,7 @@ const styles = StyleSheet.create({
   },
 
   errorText: {
-     color: 'red',
+    color: 'red',
     fontSize: 12,
     marginTop: 5,
   }

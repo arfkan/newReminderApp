@@ -1,8 +1,15 @@
 import React from 'react';
-import MainNavigator from '@/navigation/MainNavigator';
+import { Provider } from 'react-redux';
+import store from '../redux/store';
+import MainNavigator from '../navigation/MainNavigator';
 
-const App = () => {
-  return <MainNavigator />;
-};
 
-export default App;
+export default function App() {
+  return (
+    <Provider store={store}>
+    
+        <MainNavigator />
+   
+    </Provider>
+  );
+}
