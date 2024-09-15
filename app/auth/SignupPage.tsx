@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/redux/store';
@@ -10,6 +10,7 @@ import { IUserRegister } from '@/types';
 import { isPasswordValid } from '../../utils/validation';
 import { inputBoxStyles } from '@/styles/common/inputBox';
 import { ButonStyles } from '@/styles/common/button';
+import { ImageStyles } from '@/styles/common/image';
 
 const SignupPage = () => {
   const [userProps, setUserProps] = useState<IUserRegister>({
@@ -63,6 +64,7 @@ const SignupPage = () => {
 
   return (
     <View style={styles.container}>
+      <Image source={require('@/assets/images/register.jpg')}  style={ImageStyles.image}/>
       <TextInput
         style={inputBoxStyles.inputBox}
         placeholder="UserName"
@@ -113,6 +115,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 20,
+    backgroundColor: 'white',
+    marginTop:100,
   },
 
   errorText: {

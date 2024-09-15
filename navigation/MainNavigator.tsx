@@ -6,11 +6,14 @@ import { createStackNavigator } from '@react-navigation/stack';
 import LoginPage from '@/app/auth/LoginPage';
 import SignupPage from '@/app/auth/SignupPage';
 import MainPage from '@/app/unauth/MainPage';
+import PlusScreen from '@/app/unauth/PlusScreen';
 
 export type AuthStackParamList = {
   Login: undefined;
   Signup: undefined;
   MainPage: undefined;
+  PlusScreen: undefined;
+
 };
 
 const Stack = createStackNavigator<AuthStackParamList>();
@@ -19,9 +22,10 @@ const AppNavigator = () => {
   return (
    
       <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginPage} />
-        <Stack.Screen name="Signup" component={SignupPage} />
-        <Stack.Screen name="MainPage" component={MainPage} /> 
+        <Stack.Screen name="Login" component={LoginPage} options={{ headerShown: false }} />
+        <Stack.Screen name="Signup" component={SignupPage} options={{ headerShown: false }} />
+        <Stack.Screen name="MainPage" component={MainPage} options={{ headerShown: false }}  /> 
+        <Stack.Screen name ="PlusScreen" component = {PlusScreen} options = {{headerShown: false}}/>
       </Stack.Navigator>
   
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, Image} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
@@ -9,6 +9,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IUserLogin } from '@/types';
 import { inputBoxStyles } from '@/styles/common/inputBox';
 import { ButonStyles } from '@/styles/common/button';
+import { ImageStyles } from '@/styles/common/image';
+
 
 type AuthStackParamList = {
   Login: undefined;
@@ -66,6 +68,7 @@ const LoginPage = () => {
 
   return (
     <View style={styles.container}>
+    <Image source={require('@/assets/images/login-image.png')}  style={ImageStyles.image}/>
       <TextInput
         style={inputBoxStyles.inputBox}
         placeholder="E-posta"
@@ -100,6 +103,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 20,
+    marginTop: 120,
+    backgroundColor: 'white'
   },
   signupContainer: {
     flexDirection: 'row',

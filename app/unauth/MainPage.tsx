@@ -1,38 +1,13 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import styles from '../../styles/common/Icon';  
-
-const HomeScreen = () => (
-  <View>
-    <Text>Home Screen</Text>
-  </View>
-);
-
-const SettingsScreen = () => (
-  <View>
-    <Text>Settings Screen</Text>
-  </View>
-);
-
-const PlusScreen = () => (
-  <View>
-    <Text>Plus Screen</Text>
-  </View>
-);
-
-const FindScreen = () => (
-  <View>
-    <Text>Find Screen</Text>
-  </View>
-);
-
-const NotificationsScreen = () => (
-  <View>
-    <Text>Notifications Screen</Text>
-  </View>
-);
+import HomeScreen from './HomeScreen';
+import SettingsScreen from './SettingsScreen';
+import FindScreen from './FindScreen';
+import NotificationsScreen from './NotificationsScreen';
+import { Button, View } from 'react-native';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import { NavigationContainer } from '@react-navigation/native';
 
 const Tab = createBottomTabNavigator();
 
@@ -41,35 +16,28 @@ const MainPage = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: string = ''; 
+          let iconName = '';
 
           if (route.name === 'Home') {
             iconName = 'home';
           } else if (route.name === 'Settings') {
             iconName = 'settings';
-          } else if (route.name === 'Plus') {
-          
-            return (
-              <View style={styles.plusIconContainer}>
-                <MaterialIcons name="add" style={styles.plusIcon} />
-              </View>
-            );
           } else if (route.name === 'Find') {
             iconName = 'search';
           } else if (route.name === 'Notifications') {
             iconName = 'notifications';
           }
 
-          return <MaterialIcons name={iconName} size={25} color={color} style={styles.tabIcon} />;
+          return <MaterialIcons name={iconName} size={25} color={color} />;
         },
         tabBarActiveTintColor: 'tomato',
         tabBarInactiveTintColor: 'gray',
+        tabBarStyle: { paddingBottom: 10 },
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
-      <Tab.Screen name="Plus" component={PlusScreen} />
       <Tab.Screen name="Find" component={FindScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
       <Tab.Screen name="Notifications" component={NotificationsScreen} />
     </Tab.Navigator>
   );
