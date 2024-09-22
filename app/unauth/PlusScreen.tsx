@@ -1,73 +1,168 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import { PermissionsAndroid, Platform } from 'react-native';
 
-const PlusScreen = () => {
-  const [task, setTask] = useState(''); // Kullanıcının girdiği görev
-  const [category, setCategory] = useState(''); // Seçilen kategori
-  const [tasks, setTasks] = useState<{ task: string; category: string }[]>([]);// Tüm görevleri saklayan state
+const audioRecorderPlayer = new AudioRecorderPlayer();
 
-  // Görevi kaydetme işlevi
-  const handleSaveTask = () => {
-    if (task && category) {
-      // Yeni görevi ekleme
-      setTasks([...tasks, { task, category }]);
-      setTask(''); // Inputu temizleme
-      setCategory(''); // Kategoriyi sıfırlama
-    } else {
-      alert('Lütfen bir görev ve kategori giriniz.');
-    }
+const PlusScreen = ({ onSave, onClose }: { onSave: (task: string, category: string, deadline: string, degree: string) => void, onClose: () => void }) => {
+  // State'ler
+  const [task, setTask] = useState(''); // Görev için
+  const [category, setCategory] = useState(''); // Kategori için
+  const [deadline, setDeadline] = useState(''); // Sona erme tarihi için
+  const [degree, setDegree] = useState(''); // Derece için
+  const [isDatePickerVisible, setIsDatePickerVisible] = useState(false); // Takvim görünürlüğü için
+  const [isRecording, setIsRecording] = useState(false); // Ses kaydı için  
+
+  // Takvimi açma/kapatma ve tarih seçme fonksiyonları
+  const showDatePicker = () => {
+    setIsDatePickerVisible(true);
   };
 
-  // Görev kutucuklarını oluşturma
- 
-const renderTaskItem = ({ item }: { item: { task: string; category: string } }) => (
-    <View style={styles.taskCard}>
-      <Text style={styles.taskText}>Görev: {item.task}</Text>
-      <Text style={styles.categoryText}>Kategori: {item.category}</Text>
-    </View>
-  );
+  const hideDatePicker = () => {
+    setIsDatePickerVisible(false);
+  };
+
+  const handleConfirm = (date: Date) => {
+    setDeadline(date.toLocaleDateString()); // Seçilen tarihi sona erme tarihine ekler
+    hideDatePicker();
+  };
+
+  const handleSaveTask = () => {
+    if (!task || !category || !deadline || !degree) {
+      alert('Lütfen görev, kategori, son tarih ve derece bilgilerini eksiksiz giriniz.');
+    } else {
+      onSave(task, category, deadline, degree); // Görev, kategori, son tarih ve derece ana ekrana gönderiliyor
+      setTask('');
+      setCategory('');
+      setDeadline(''); 
+      setDegree('');
+    }
+  };
+   // mikrofon izin kontrolu
+
+   // Mikrofon izni kontrolü
+   const checkPermission = async () => {
+    if (Platform.OS === 'android') {
+      const granted = await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE
+      ]);
+  
+      if (
+        granted['android.permission.RECORD_AUDIO'] === PermissionsAndroid.RESULTS.GRANTED
+      ) {
+        console.log('Mikrofona izin verildi');
+        return true;
+      } else {
+        console.log('Mikrofona izin verilmedi');
+        return false;
+      }
+    }
+    return true; // iOS için izin zaten verilmiştir
+  };
+  
+
+  // Ses kaydına başlama fonksiyonu
+  const startRecording = async () => {
+    const hasPermission = await checkPermission();
+    if (!hasPermission) return;
+
+    setIsRecording(true);
+    await audioRecorderPlayer.startRecorder();
+    audioRecorderPlayer.addRecordBackListener((e) => {
+      console.log('Recording', e.currentPosition);
+      return;
+    });
+  };
+
+  // Ses kaydını durdurma fonksiyonu
+  const stopRecording = async () => {
+    const result = await audioRecorderPlayer.stopRecorder();
+    setIsRecording(false);
+    audioRecorderPlayer.removeRecordBackListener();
+    console.log('Recorded file', result);
+    setTask(result); // Kaydedilen ses dosyasının yolunu task olarak ayarlayın
+  };
+
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
-      <Text style={{ fontSize: 24, marginBottom: 20 }}>Görev Ekle</Text>
+      <Text style={{ fontSize: 24, marginBottom: 20, color: 'red' }}>Görev Ekle</Text>
 
-      {/* Görev metni girişi */}
+      {/* Görevi yazma TextInput */}
+
+      <View>
       <TextInput
         placeholder="Görevinizi yazın"
         value={task}
         onChangeText={setTask}
         style={styles.input}
       />
+     <TouchableOpacity onPress={isRecording ? stopRecording : startRecording}>
+          <MaterialIcons name={isRecording ? "stop" : "mic"} size={30} {...{ style: { marginLeft: 340, marginTop: -60 } }} color={isRecording ? "red" : "gray"} />
+        </TouchableOpacity>
+      </View>
+     
 
-      {/* Kategori seçimi */}
-      <Text style={{ fontSize: 18, marginBottom: 10 }}>Kategori seçin:</Text>
+      {/* Sona erme tarihi seçme */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+        <TextInput
+          placeholder="Sona Erme Tarihi"
+          value={deadline} // Son tarih burada gösterilecek
+          style={styles.input}
+          editable={false} // Bu alan manuel yazılamaz, sadece takvimden seçilir
+        />
+        <TouchableOpacity onPress={showDatePicker}>
+          <MaterialIcons style={{ marginLeft: -35, marginBottom: 20 }} name="date-range" size={34} color="gray" />
+        </TouchableOpacity>
+      </View>
+
+
+      <DateTimePickerModal
+        isVisible={isDatePickerVisible}
+        mode="date"
+        onConfirm={handleConfirm}
+        onCancel={hideDatePicker}
+      />
+      <Text style={{ fontSize: 18, marginBottom: 10, color: 'red' }}>Görevinizin derecesini seçin:</Text>
+     <Picker
+      selectedValue={degree}
+      onValueChange={(itemValue) => setDegree(itemValue)}
+      style={styles.picker}
+     >
+       <Picker.Item label="Düşük" color="green" value="düşük" />
+        <Picker.Item label="Orta" color="orange" value="orta" />
+        <Picker.Item label="Yüksek" color='red' value="yüksek" />
+     </Picker>
+      
+
+      <Text style={{ fontSize: 18, marginBottom: 10, color: 'red' }}>Kategori seçin:</Text>
       <Picker
         selectedValue={category}
         onValueChange={(itemValue) => setCategory(itemValue)}
         style={styles.picker}
       >
         <Picker.Item label="Spor" value="spor" />
-        <Picker.Item label="Eğitim" value="egitim" />
-        <Picker.Item label="Çalışma" value="calisma" />
-        <Picker.Item label="Ev İşleri" value="ev_isleri" />
+        <Picker.Item label="Eğitim" value="eğitim" />
+        <Picker.Item label="Çalışma" value="calışma" />
+        <Picker.Item label="Ev İşleri" value="ev işleri" />
+        <Picker.Item label="Sağlık" value="sağlık" />
       </Picker>
 
-      {/* Görev kaydetme butonu */}
-      <TouchableOpacity
-        onPress={handleSaveTask}
-        style={styles.saveButton}
-      >
+      {/* Görevi kaydetme */}
+      <TouchableOpacity onPress={handleSaveTask} style={styles.saveButton}>
         <Text style={styles.saveButtonText}>Görevi Kaydet</Text>
       </TouchableOpacity>
 
-      {/* Kaydedilen görevleri listeleme */}
-      <FlatList
-        data={tasks}
-        renderItem={renderTaskItem}
-        keyExtractor={(item, index) => index.toString()}
-        style={{ marginTop: 20 }}
-      />
+      {/* İptal butonu */}
+      <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+        <Text style={styles.closeButtonText}>İptal</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -96,21 +191,20 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
   },
-  taskCard: {
-    backgroundColor: '#f8f8f8',
-    padding: 15,
-    marginVertical: 10,
-    borderRadius: 8,
-    borderColor: '#ddd',
-    borderWidth: 1,
+  closeButton: {
+    marginTop: 20,
+    alignItems: 'center',
   },
-  taskText: {
+  closeButtonText: {
+    color: '#FF0000',
     fontSize: 16,
-    fontWeight: 'bold',
   },
-  categoryText: {
-    fontSize: 14,
-    color: 'gray',
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 10,
   },
 });
 

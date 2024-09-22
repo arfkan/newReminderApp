@@ -25,6 +25,7 @@ export const loginUser = createAsyncThunk(
       } else {
         return rejectWithValue('Geçersiz e-posta veya şifre.');
       }
+      
     } catch (error) {
       return rejectWithValue('Bir hata oluştu.');
     }

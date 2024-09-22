@@ -1,46 +1,89 @@
 import React from 'react';
-import { View, TouchableOpacity, Image, Text } from 'react-native';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import styles from '../../styles/common/Icon'; 
-import { useNavigation } from '@react-navigation/native';
-import { RootStackParamList } from '../../navigation/types';
-import { StackNavigationProp } from '@react-navigation/stack';
-import Svg, { Path } from 'react-native-svg';
+import { View, Text, FlatList, StyleSheet, ImageBackground } from 'react-native';
 
-const HomeScreen = () => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+const HomeScreen = ({ tasks }: { tasks: { task: string, category: string, deadline: string, degree: string }[] }) => {
+
+  // Görevleri derecesine göre sıralayan fonksiyon
+  const sortedTasks = tasks.sort((a, b) => {
+    const degreeOrder: { [key: string]: number } = { 'yüksek': 3, 'orta': 2, 'düşük': 1 };
+    return degreeOrder[b.degree] - degreeOrder[a.degree]; // Yüksek dereceleri öne çıkarma
+  });
+
+  // dereceyi öne çıkarma işleminde sort fonksiyonunu kullandık.
 
   return (
-    
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>     
-      <Image
-        source={require('../../assets/images/checklist-seo.png')}
-        style={{ width: 400, height: 300, marginBottom: 150 }}
-      />
-        <Text style={{fontSize:20, fontWeight: 'bold',marginBottom:150, left: 70}}>İlk görevinizi ekleyin</Text>
-      <TouchableOpacity 
-        style={styles.plusIconContainer} 
-        onPress={() => navigation.navigate('PlusScreen')}
-      >
-      
-        <View style={{ position: 'absolute', width: 120, height: 120, right: -90, top: -120 }}>
-          <Svg height="140" width="150" viewBox="0 0 120 120">
-            <Path
-              d="M100 10 C 10 40, 70 70, 20 100 L 30 100 L 20 100 L 20 90"
-              fill="none"
-              stroke="#FFA500"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </Svg>
-        </View>
-        <MaterialIcons name="add" style={styles.plusIcon}
-        onPress={()=> navigation.navigate('PlusScreen')}
-        />
-      </TouchableOpacity>
-    </View>
+    <ImageBackground 
+      source={require('@/assets/images/orangeü.jpg')}  
+      style={styles.background}
+    >
+      <View style={styles.container}>
+        <Text style={styles.title}>Görevler</Text>
+        {sortedTasks.length === 0 ? (
+          <Text style={styles.noTaskText}>Henüz görev eklenmedi.</Text>
+        ) : (
+          <FlatList        
+
+
+          
+            data={sortedTasks}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+              <View style={styles.taskItem}>
+                <Text style={styles.taskText}>{item.task}</Text>
+                <Text style={styles.categoryText}>Kategori: {item.category}</Text>
+                <Text style={styles.categoryText}>Sona Erme Tarihi: {item.deadline}</Text>
+                <Text style={[styles.degreeText, item.degree === 'yüksek' ? styles.highDegree : null]}>
+                  Derece: {item.degree}
+                </Text>
+              </View>
+            )}
+          />
+        )}
+      </View>
+    </ImageBackground>
   );
 };
+
+const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    width: '100%',  
+    height: '100%', 
+  },
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)', 
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  noTaskText: {
+    fontSize: 18,
+    color: 'gray',
+  },
+  taskItem: {
+    backgroundColor: '#f9f9f9',
+    padding: 10,
+    marginVertical: 8,
+    borderRadius: 5,
+  },
+  taskText: {
+    fontSize: 19,
+  },
+  categoryText: {
+    fontSize: 14,
+    color: 'gray',
+  },
+  degreeText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  highDegree: {
+    color: 'red', 
+  }
+});
 
 export default HomeScreen;
