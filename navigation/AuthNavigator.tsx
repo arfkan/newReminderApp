@@ -27,7 +27,7 @@ const AuthNavigator = () => {
         
         if (token) {
           // Check the token's validity via the API
-          const response = await axios.post('https://xxxx/checkToken', { token });
+          const response = await axios.post('http://192.168.1.44:5000/api/auth', { token });
 
           if (response.data.valid) {
             setIsAuthenticated(true);
@@ -61,7 +61,7 @@ const AuthNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isAuthenticated ? (
-        <Stack.Screen name="Main" component={MainNavigator} />
+        <Stack.Screen name="Main" component={MainNavigator} />   
       ) : (
         <>
           <Stack.Screen name="Login" component={LoginPage} />

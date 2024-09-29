@@ -13,6 +13,7 @@ export type AuthStackParamList = {
   Signup: undefined;
   MainPage: undefined;
   PlusScreen: undefined;
+  DetailPage: undefined;
 
 };
 

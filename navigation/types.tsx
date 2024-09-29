@@ -6,6 +6,7 @@ export type RootStackParamList = {
   LoginPage: undefined;
   MainPage: undefined;
   PlusScreen: undefined;
+  DetailPage: undefined;
 };
 
 export type SignupPageNavigationProp = StackNavigationProp<RootStackParamList, 'SignupPage'>;

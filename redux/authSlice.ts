@@ -1,107 +1,103 @@
-{/*
-  Bu kod, kullanıcı giriş ve kayıt işlemlerini simüle eden bir Redux dilimi oluşturur. 
-  Asenkron işlemleri yönetmek için createAsyncThunk kullanılır
-   ve extraReducers ile bu işlemlerin sonucuna göre durumu günceller.
-   Böylece, uygulamanızda kimlik doğrulama işlemlerini kolayca yönetebilirsiniz.
-  */}
 
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-
-// Login thunk
-export const loginUser = createAsyncThunk(
-  'auth/loginUser',
-  async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
-    try {
-      // Mock delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      //  Mock successful login response
-      const mockResponse = { data: { token: 'mock_token_123' } };
-      
-      // Kimlik bilgilerinin geçerli olup olmadığını kontrol et (mock validation)
-      if (email === 'test@example.com' && password === 'password123') {
-        return mockResponse.data;
-      } else {
-        return rejectWithValue('Geçersiz e-posta veya şifre.');
+  import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+  import axios from 'axios';
+  
+  // API URL'sini tanımlayın (örnek olarak)
+  const API_URL = 'http://192.168.1.44:5000/api/auth';
+  
+  // Login thunk
+  export const loginUser = createAsyncThunk(
+    'auth/loginUser',
+    async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
+      try {
+        const response = await axios.post(`${API_URL}/login`, { email, password });
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          return rejectWithValue(error.response?.data?.message || 'Giriş başarısız oldu');
+        }
+        return rejectWithValue('Bir hata oluştu');
       }
-      
-    } catch (error) {
-      return rejectWithValue('Bir hata oluştu.');
     }
-  }
-);
-
-// Register thunk
-export const registerUser = createAsyncThunk(
-  'auth/registerUser',
-  async ({ username, email, password }: { username: string; email: string; password: string }, { rejectWithValue }) => {
-    try {
-      // Mock delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Mock successful registration response
-      const mockResponse = { data: { token: 'mock_token_123' } };
-      
-      // Mock validation
-      if (email.includes('@') && password.length >= 6) {
-        return mockResponse.data;
-      } else {
-        return rejectWithValue('Geçersiz kayıt bilgileri.');
+  );
+  
+  // Register thunk
+  export const registerUser = createAsyncThunk(
+    'auth/registerUser',
+    async ({ userName, email, password }: { userName: string; email: string; password: string }, { rejectWithValue }) => {
+      try {
+        const response = await axios.post(`${API_URL}/register`, { userName, email, password });
+        return response.data;
+      } catch (error) {
+        console.error('Error:', error); // Hatanın detayını görmek için log ekleyin
+        if (axios.isAxiosError(error)) {
+          return rejectWithValue(error.response?.data?.message || 'Kayıt başarısız oldu');
+        }
+        return rejectWithValue('Bir hata oluştu');
       }
-    } catch (error) {
-      return rejectWithValue('Bir hata oluştu.');
     }
+  );
+
+
+
+  interface AuthState {
+    user: any | null;
+    token: string | null;
+    error: string | null;
+    loading: boolean;
   }
-);
-
-interface AuthState {
-  token: string | null;
-  error: string | null;
-  loading: boolean;
-}
-
-// Initial state
-const initialState: AuthState = {
-  token: null,
-  error: null,
-  loading: false,
-};
-
-// Create auth slice
-const authSlice = createSlice({
-  name: 'auth',
-  initialState,
-  reducers: {},
-  extraReducers: (builder) => {
-    builder
-      // Login actions
-      .addCase(loginUser.pending, (state) => { // pending durumu: İşlem başladığında yükleme durumu etkinleştirilir (loading = true), hata durumu sıfırlanır.
-        state.loading = true;
+  
+  const initialState: AuthState = {
+    user: null,
+    token: null,
+    error: null,
+    loading: false,
+  };
+  
+  const authSlice = createSlice({
+    name: 'auth',
+    initialState,
+    reducers: {
+      logout: (state) => {
+        state.user = null;
+        state.token = null;
+      },
+      clearError: (state) => {
         state.error = null;
-      })
-      .addCase(loginUser.fulfilled, (state, action) => { // fulfilled Durumu: İşlem başarıyla tamamlandığında yükleme durumu devre dışı bırakılır ve token saklanır
-        state.loading = false;
-        state.token = action.payload.token;
-      })
-      .addCase(loginUser.rejected, (state, action) => { // rejected Durumu: İşlem başarısız olduğunda yükleme durumu devre dışı bırakılır ve hata mesajı güncellenir.
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-      // Register actions
-      .addCase(registerUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(registerUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.token = action.payload.token;
-      })
-      .addCase(registerUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      });
-  },
-});
-
-export default authSlice.reducer;
+      },
+    },
+    extraReducers: (builder) => {
+      builder
+        // Login actions
+        .addCase(loginUser.pending, (state) => {
+          state.loading = true;
+          state.error = null;
+        })
+        .addCase(loginUser.fulfilled, (state, action) => {
+          state.loading = false;
+          state.user = action.payload.user;
+          state.token = action.payload.token;
+        })
+        .addCase(loginUser.rejected, (state, action) => {
+          state.loading = false;
+          state.error = action.payload as string;
+        })
+        // Register actions
+        .addCase(registerUser.pending, (state) => {
+          state.loading = true;
+          state.error = null;
+        })
+        .addCase(registerUser.fulfilled, (state, action) => {
+          state.loading = false;
+          state.user = action.payload.user;
+          state.token = action.payload.token;
+        })
+        .addCase(registerUser.rejected, (state, action) => {
+          state.loading = false;
+          state.error = action.payload as string;
+        });
+    },
+  });
+  
+  export const { logout, clearError } = authSlice.actions;
+  export default authSlice.reducer;

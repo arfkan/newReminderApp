@@ -152,6 +152,7 @@ const PlusScreen = ({ onSave, onClose }: { onSave: (task: string, category: stri
         <Picker.Item label="Çalışma" value="calışma" />
         <Picker.Item label="Ev İşleri" value="ev işleri" />
         <Picker.Item label="Sağlık" value="sağlık" />
+        <Picker.Item label="Alışveriş" value="alışveriş" />
       </Picker>
 
       {/* Görevi kaydetme */}

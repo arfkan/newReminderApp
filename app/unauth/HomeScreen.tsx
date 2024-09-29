@@ -11,7 +11,38 @@ const HomeScreen = ({ tasks }: { tasks: { task: string, category: string, deadli
 
   // dereceyi öne çıkarma işleminde sort fonksiyonunu kullandık.
 
+
+  // görevleri kategoriye göre sıralayan fonksiyon
+const groupedTasks = sortedTasks.reduce((acc: {[key: string]: any[]}, task)=>{ // acc, birikim yapan (accumulator) değişkendir.
+
+  if(!acc[task.category]){
+    acc[task.category] = []; // burda örneğin spor kategorisi yoksa acc ye spor kategorisi eklenir.
+  }
+  acc[task.category].push(task); // sonrasında ilgili görev bu kategoriye eklenir.
+  return acc;
+},{});  
+
+// gruplanmış görevleri düz bir liste haline getiren fonksiyon
+
+const categorizedTaskList = Object.keys(groupedTasks).map(category => ({
+  category,
+  data: groupedTasks[category]
+}));
+
+ const colorContainer = (degree: string) => {
+    if (degree === "yüksek") {
+      return "red";
+    } else if (degree === "orta") {
+      return "orange";
+    } else { (degree === "düşuk")
+      return "green";
+    }
+  };
+
+
+ 
   return (
+
     <ImageBackground 
       source={require('@/assets/images/orangeü.jpg')}  
       style={styles.background}
@@ -21,26 +52,34 @@ const HomeScreen = ({ tasks }: { tasks: { task: string, category: string, deadli
         {sortedTasks.length === 0 ? (
           <Text style={styles.noTaskText}>Henüz görev eklenmedi.</Text>
         ) : (
-          <FlatList        
-
-
-          
-            data={sortedTasks}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.taskItem}>
-                <Text style={styles.taskText}>{item.task}</Text>
-                <Text style={styles.categoryText}>Kategori: {item.category}</Text>
-                <Text style={styles.categoryText}>Sona Erme Tarihi: {item.deadline}</Text>
-                <Text style={[styles.degreeText, item.degree === 'yüksek' ? styles.highDegree : null]}>
-                  Derece: {item.degree}
-                </Text>
-              </View>
-            )}
-          />
+          <FlatList
+          data={categorizedTaskList}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.categorySection}>
+              {/* Kategori Başlığı */}
+              <Text style={styles.categoryTitle}>{item.category}</Text>
+              {/* Kategorinin Altındaki Görevler */}
+              {item.data.map((taskItem, taskIndex) => (
+                <View key={taskIndex}
+                style={[
+                  styles.taskItem,
+                  { backgroundColor: colorContainer(taskItem.degree) }, // Burada arka plan rengini ayarlıyoruz
+                ]}>
+                  <Text style={styles.taskText}>{taskItem.task}</Text>
+                  <Text style={styles.categoryText}>Sona Erme Tarihi: {taskItem.deadline}</Text>
+                  <Text style={[styles.degreeText, taskItem.degree === 'yüksek' ? styles.highDegree : null]}>
+                    Derece: {taskItem.degree}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        />
         )}
       </View>
     </ImageBackground>
+
   );
 };
 
@@ -64,6 +103,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'gray',
   },
+  categorySection: {
+    marginBottom: 20,
+  },
+  categoryTitle: {
+    fontSize: 25,
+    fontWeight: 'bold',
+    color: 'red',
+    marginBottom: 10,
+  },
   taskItem: {
     backgroundColor: '#f9f9f9',
     padding: 10,
@@ -75,7 +123,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 14,
-    color: 'gray',
+    color: 'black',
   },
   degreeText: {
     fontSize: 14,

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import * as React  from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, Image} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';

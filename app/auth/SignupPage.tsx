@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React  from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
@@ -14,7 +15,7 @@ import { ImageStyles } from '@/styles/common/image';
 
 const SignupPage = () => {
   const [userProps, setUserProps] = useState<IUserRegister>({
-    username: '',
+    userName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -51,7 +52,13 @@ const SignupPage = () => {
     }
 
     // Redux action çağırarak kayıt yap
-    const resultAction = await dispatch(registerUser(userProps));
+    const resultAction = await dispatch(registerUser(
+      {
+        userName: userProps.userName,
+        email: userProps.email,
+        password: userProps.password, 
+      }
+    ));
 
     if (registerUser.fulfilled.match(resultAction)) {
       const token = resultAction.payload.token; // Redux'tan token al
@@ -68,8 +75,8 @@ const SignupPage = () => {
       <TextInput
         style={inputBoxStyles.inputBox}
         placeholder="UserName"
-        value={userProps.username}
-        onChangeText={(value) => handleChange('username', value)}
+        value={userProps.userName}
+        onChangeText={(value) => handleChange('userName', value)}
       />
 
       <TextInput

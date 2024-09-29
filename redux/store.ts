@@ -1,15 +1,14 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../redux/authSlice';
+import taskReducer from '../redux/taskSlice';
 
 const store = configureStore({
   reducer: {
     auth: authReducer,
+    tasks: taskReducer,
   },
-  // middleware'i varsayılan olarak kullan
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: false,  // Kodunuzda bu ayar, seri hale getirilemeyen bir değerin duruma veya eylemlere dahil olabileceği bir durumu önlemek veya hata almamak için kullanılmış.
-    }),
+ 
+ 
 });
 
 export type RootState = ReturnType<typeof store.getState>;
