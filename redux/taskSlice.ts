@@ -1,25 +1,43 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { RootState } from "./store";
 
 
 
- const API_URL = 'http://192.168.1.44:5000/api/tasks';
+ const API_URL = 'http://192.168.1.50:5000/api/task';
+
 
  // görev oluşturma thunk
  export const createTask = createAsyncThunk(
     'task/createTask',
-    async (taskData: {task: string; category: string; deadline: string; Date: string; degree: string}, {rejectWithValue}) => {
-        try {
-            const response = await axios.post(API_URL, taskData);
-            return response.data;
-        } catch (error) {
-            if(axios.isAxiosError(error)){
-                return rejectWithValue(error.response?.data?.message || 'Görev oluşturulamadı');
-            }
-            return rejectWithValue('Bir hata oluştu');
+    async (taskData: {task: string; category: string; deadline: string; degree: string}, {getState, rejectWithValue}) => {
+      const state = getState() as RootState;
+      const token = state.auth.token;
+  
+
+      
+      console.log('Current token:', token); // Token'ı loglayalım
+  
+      if (!token) {
+        return rejectWithValue('Token bulunamadı. Lütfen tekrar giriş yapın.');
+      }
+  
+      try {
+        const response = await axios.post(`${API_URL}/create`, taskData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }
+        });
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          return rejectWithValue('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
         }
+        return rejectWithValue('Bir hata oluştu');
+      }
     }
- );
+  );
 
  //  görevleri getirme thunk 
  export const fetchTask = createAsyncThunk(
@@ -76,7 +94,7 @@ import axios from "axios";
     task: string;
     category: string;
     deadline: Date;
-    degree: string;
+    degree: 'düşük' | 'orta' | 'buyuk';
     audioPath: string;
  }
 
@@ -109,11 +127,11 @@ import axios from "axios";
             state.error = null;
         })
         .addCase(createTask.fulfilled, (state, action) => {
-           state.loading = true;
+           state.loading = false;
            state.tasks.push(action.payload);
         })
         .addCase(createTask.rejected, (state, action)=>{
-            state.loading = true;
+            state.loading = false;
             state.error = action.payload as string;
         })
 
@@ -127,7 +145,7 @@ import axios from "axios";
             state.tasks = action.payload;
         })
         .addCase(fetchTask.rejected, (state, action)=> {
-            state.loading = true;
+            state.loading = false;
             state.error = action.payload as string;
         })
 
@@ -141,7 +159,7 @@ import axios from "axios";
             state.tasks = state.tasks.filter(task=> task._id !== action.payload);
         })
         .addCase(deleteTask.rejected, (state, action)=> {
-            state.loading = true;
+            state.loading = false;
             state.error = action.payload as string;
         });
     },

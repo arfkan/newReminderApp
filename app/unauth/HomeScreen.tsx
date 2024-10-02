@@ -19,6 +19,8 @@ const groupedTasks = sortedTasks.reduce((acc: {[key: string]: any[]}, task)=>{ /
     acc[task.category] = []; // burda örneğin spor kategorisi yoksa acc ye spor kategorisi eklenir.
   }
   acc[task.category].push(task); // sonrasında ilgili görev bu kategoriye eklenir.
+
+
   return acc;
 },{});  
 
@@ -29,15 +31,15 @@ const categorizedTaskList = Object.keys(groupedTasks).map(category => ({
   data: groupedTasks[category]
 }));
 
- const colorContainer = (degree: string) => {
-    if (degree === "yüksek") {
-      return "red";
-    } else if (degree === "orta") {
-      return "orange";
-    } else { (degree === "düşuk")
-      return "green";
-    }
-  };
+const colorContainer = (degree: string) => {
+  if (degree === "yüksek") {
+    return "red";
+  } else if (degree === "orta") {
+    return "orange";
+  } else if (degree === "düşük") { 
+    return "green";
+  }
+};
 
 
  
@@ -57,25 +59,24 @@ const categorizedTaskList = Object.keys(groupedTasks).map(category => ({
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
             <View style={styles.categorySection}>
-              {/* Kategori Başlığı */}
               <Text style={styles.categoryTitle}>{item.category}</Text>
-              {/* Kategorinin Altındaki Görevler */}
-              {item.data.map((taskItem, taskIndex) => (
-                <View key={taskIndex}
-                style={[
-                  styles.taskItem,
-                  { backgroundColor: colorContainer(taskItem.degree) }, // Burada arka plan rengini ayarlıyoruz
-                ]}>
-                  <Text style={styles.taskText}>{taskItem.task}</Text>
-                  <Text style={styles.categoryText}>Sona Erme Tarihi: {taskItem.deadline}</Text>
-                  <Text style={[styles.degreeText, taskItem.degree === 'yüksek' ? styles.highDegree : null]}>
-                    Derece: {taskItem.degree}
-                  </Text>
-                </View>
-              ))}
+              <FlatList
+                data={item.data}
+                keyExtractor={(taskItem, taskIndex) => taskIndex.toString()}
+                renderItem={({ item: taskItem }) => (
+                  <View style={[styles.taskItem, { backgroundColor: colorContainer(taskItem.degree) }]}>
+                    <Text style={styles.taskText}>{taskItem.task}</Text>
+                    <Text style={styles.categoryText}>Sona Erme Tarihi: {taskItem.deadline}</Text>
+                    <Text style={[styles.degreeText, taskItem.degree === 'yüksek' ? styles.highDegree : null]}>
+                      Derece: {taskItem.degree}
+                    </Text>
+                  </View>
+                )}
+              />
             </View>
           )}
         />
+        
         )}
       </View>
     </ImageBackground>

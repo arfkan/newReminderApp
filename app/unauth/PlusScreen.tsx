@@ -1,14 +1,26 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, StyleSheet, Platform, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
-import { PermissionsAndroid, Platform } from 'react-native';
+import { PermissionsAndroid } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { createTask } from '@/redux/taskSlice';
+import { AppDispatch, RootState } from '@/redux/store';
+
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
-const PlusScreen = ({ onSave, onClose }: { onSave: (task: string, category: string, deadline: string, degree: string) => void, onClose: () => void }) => {
+interface PlusScreenProps {
+  onSave: (task: string, category: string, deadline: string, degree: string) => void;
+  onClose: () => void;
+}
+
+const PlusScreen: React.FC<PlusScreenProps> = ({ onSave, onClose }) => {
+  const dispatch = useDispatch<AppDispatch>(); // redux
+  useSelector((state: RootState) => state.tasks); // redux
+
   // State'ler
   const [task, setTask] = useState(''); // Görev için
   const [category, setCategory] = useState(''); // Kategori için
@@ -31,41 +43,68 @@ const PlusScreen = ({ onSave, onClose }: { onSave: (task: string, category: stri
     hideDatePicker();
   };
 
-  const handleSaveTask = () => {
+  const handleSaveTask = async () => {
+    // Tüm alanların doldurulup doldurulmadığını kontrol et
     if (!task || !category || !deadline || !degree) {
-      alert('Lütfen görev, kategori, son tarih ve derece bilgilerini eksiksiz giriniz.');
-    } else {
-      onSave(task, category, deadline, degree); // Görev, kategori, son tarih ve derece ana ekrana gönderiliyor
+      Alert.alert('Hata', 'Lütfen tüm alanları doldurun.');
+      return;
+    }
+  
+    try {
+      console.log('Görev verisi gönderiliyor:', { task, category, deadline, degree });
+  
+      // Redux dispatch işlemi: görev kaydediliyor
+      const result = await dispatch(createTask({
+        task,
+        category,
+        deadline,
+        degree
+      })).unwrap();
+  
+      console.log('Sunucudan gelen yanıt:', result);
+      Alert.alert('Başarılı', 'Görev başarıyla kaydedildi!');
+  
+      // Görev ana ekrana kaydediliyor
+      onSave(task, category, deadline, degree);
+  
+      // Alanlar sıfırlanıyor
       setTask('');
       setCategory('');
-      setDeadline(''); 
+      setDeadline('');
       setDegree('');
+
+      onClose();
+    } catch (error) {
+      console.error('Görev kaydedilirken hata oluştu:', error);
+      Alert.alert('Hata', `Görev kaydedilirken bir hata oluştu: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
-   // mikrofon izin kontrolu
-
-   // Mikrofon izni kontrolü
-   const checkPermission = async () => {
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.requestMultiple([
-        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE
-      ]);
   
-      if (
-        granted['android.permission.RECORD_AUDIO'] === PermissionsAndroid.RESULTS.GRANTED
-      ) {
-        console.log('Mikrofona izin verildi');
-        return true;
-      } else {
-        console.log('Mikrofona izin verilmedi');
+
+  // Mikrofon izni kontrolü
+  const checkPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE
+        ]);
+    
+        if (granted['android.permission.RECORD_AUDIO'] === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('Mikrofona izin verildi');
+          return true;
+        } else {
+          console.log('Mikrofona izin verilmedi');
+          return false;
+        }
+      } catch (err) {
+        console.warn(err);
         return false;
       }
     }
     return true; // iOS için izin zaten verilmiştir
   };
-  
 
   // Ses kaydına başlama fonksiyonu
   const startRecording = async () => {
@@ -73,55 +112,64 @@ const PlusScreen = ({ onSave, onClose }: { onSave: (task: string, category: stri
     if (!hasPermission) return;
 
     setIsRecording(true);
-    await audioRecorderPlayer.startRecorder();
-    audioRecorderPlayer.addRecordBackListener((e) => {
-      console.log('Recording', e.currentPosition);
-      return;
-    });
+    try {
+      await audioRecorderPlayer.startRecorder();
+      audioRecorderPlayer.addRecordBackListener((e) => {
+        console.log('Recording', e.currentPosition);
+      });
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      setIsRecording(false);
+    }
   };
 
   // Ses kaydını durdurma fonksiyonu
   const stopRecording = async () => {
-    const result = await audioRecorderPlayer.stopRecorder();
-    setIsRecording(false);
-    audioRecorderPlayer.removeRecordBackListener();
-    console.log('Recorded file', result);
-    setTask(result); // Kaydedilen ses dosyasının yolunu task olarak ayarlayın
+    try {
+      const result = await audioRecorderPlayer.stopRecorder();
+      setIsRecording(false);
+      audioRecorderPlayer.removeRecordBackListener();
+      console.log('Recorded file', result);
+      setTask(result); // Kaydedilen ses dosyasının yolunu task olarak ayarlayın
+    } catch (error) {
+      console.error('Error stopping recording:', error);
+    }
   };
 
-
   return (
-    <View style={{ flex: 1, padding: 20 }}>
-      <Text style={{ fontSize: 24, marginBottom: 20, color: 'red' }}>Görev Ekle</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Görev Ekle</Text>
 
       {/* Görevi yazma TextInput */}
-
-      <View>
-      <TextInput
-        placeholder="Görevinizi yazın"
-        value={task}
-        onChangeText={setTask}
-        style={styles.input}
-      />
-     <TouchableOpacity onPress={isRecording ? stopRecording : startRecording}>
-          <MaterialIcons name={isRecording ? "stop" : "mic"} size={30} {...{ style: { marginLeft: 340, marginTop: -60 } }} color={isRecording ? "red" : "gray"} />
+      <View style={styles.inputContainer}>
+        <TextInput
+          placeholder="Görevinizi yazın"
+          value={task}
+          onChangeText={setTask}
+          style={styles.input}
+        />
+        <TouchableOpacity onPress={isRecording ? stopRecording : startRecording}>
+          <MaterialIcons 
+            name={isRecording ? "stop" : "mic"} 
+            size={30} 
+            color={isRecording ? "red" : "gray"} 
+            style={styles.micIcon}
+          />
         </TouchableOpacity>
       </View>
-     
 
       {/* Sona erme tarihi seçme */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+      <View style={styles.datePickerContainer}>
         <TextInput
           placeholder="Sona Erme Tarihi"
-          value={deadline} // Son tarih burada gösterilecek
+          value={deadline}
           style={styles.input}
-          editable={false} // Bu alan manuel yazılamaz, sadece takvimden seçilir
+          editable={false}
         />
         <TouchableOpacity onPress={showDatePicker}>
-          <MaterialIcons style={{ marginLeft: -35, marginBottom: 20 }} name="date-range" size={34} color="gray" />
+          <MaterialIcons name="date-range" size={34} color="gray" style={styles.dateIcon} />
         </TouchableOpacity>
       </View>
-
 
       <DateTimePickerModal
         isVisible={isDatePickerVisible}
@@ -129,19 +177,19 @@ const PlusScreen = ({ onSave, onClose }: { onSave: (task: string, category: stri
         onConfirm={handleConfirm}
         onCancel={hideDatePicker}
       />
-      <Text style={{ fontSize: 18, marginBottom: 10, color: 'red' }}>Görevinizin derecesini seçin:</Text>
-     <Picker
-      selectedValue={degree}
-      onValueChange={(itemValue) => setDegree(itemValue)}
-      style={styles.picker}
-     >
-       <Picker.Item label="Düşük" color="green" value="düşük" />
+
+      <Text style={styles.labelText}>Görevinizin derecesini seçin:</Text>
+      <Picker
+        selectedValue={degree}
+        onValueChange={(itemValue) => setDegree(itemValue)}
+        style={styles.picker}
+      >
+        <Picker.Item label="Düşük" color="green" value="düşük" />
         <Picker.Item label="Orta" color="orange" value="orta" />
         <Picker.Item label="Yüksek" color='red' value="yüksek" />
-     </Picker>
-      
+      </Picker>
 
-      <Text style={{ fontSize: 18, marginBottom: 10, color: 'red' }}>Kategori seçin:</Text>
+      <Text style={styles.labelText}>Kategori seçin:</Text>
       <Picker
         selectedValue={category}
         onValueChange={(itemValue) => setCategory(itemValue)}
@@ -149,7 +197,7 @@ const PlusScreen = ({ onSave, onClose }: { onSave: (task: string, category: stri
       >
         <Picker.Item label="Spor" value="spor" />
         <Picker.Item label="Eğitim" value="eğitim" />
-        <Picker.Item label="Çalışma" value="calışma" />
+        <Picker.Item label="Çalışma" value="çalışma" />
         <Picker.Item label="Ev İşleri" value="ev işleri" />
         <Picker.Item label="Sağlık" value="sağlık" />
         <Picker.Item label="Alışveriş" value="alışveriş" />
@@ -169,13 +217,42 @@ const PlusScreen = ({ onSave, onClose }: { onSave: (task: string, category: stri
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 20,
+    color: 'red',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   input: {
-    width: '100%',
+    flex: 1,
     borderColor: 'gray',
     borderWidth: 1,
     padding: 10,
-    marginBottom: 20,
     borderRadius: 5,
+  },
+  micIcon: {
+    marginLeft: 10,
+  },
+  datePickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  dateIcon: {
+    marginLeft: 10,
+  },
+  labelText: {
+    fontSize: 18,
+    marginBottom: 10,
+    color: 'red',
   },
   picker: {
     height: 50,
@@ -199,13 +276,6 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: '#FF0000',
     fontSize: 16,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 5,
-    padding: 10,
   },
 });
 
